@@ -19,7 +19,7 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 }
 
 # Setup secret key for sessions
-app.secret_key = os.environ.get("FLASK_SECRET_KEY") or "your-secret-key-here"
+app.secret_key = os.environ.get("FLASK_SECRET_KEY") or "trkntrkn"
 
 # Initialize the app with the extension
 db.init_app(app)
