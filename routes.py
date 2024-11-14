@@ -94,6 +94,51 @@ def dashboard():
     ).order_by(MealPlan.meal_type).all()
     return render_template('dashboard.html', measurements=measurements, meals=today_meals)
 
+@app.route('/progress_report')
+@login_required
+def progress_report():
+    # Get measurements for the last 30 days
+    start_date = datetime.utcnow() - timedelta(days=30)
+    measurements = Measurement.query.filter(
+        Measurement.user_id == current_user.id,
+        Measurement.date >= start_date
+    ).order_by(Measurement.date.asc()).all()
+
+    # Prepare data for the weight chart
+    dates = [m.date.strftime('%Y-%m-%d') for m in measurements]
+    weights = [m.weight for m in measurements]
+
+    # Get exercises for the last 7 days
+    exercise_start_date = datetime.utcnow() - timedelta(days=7)
+    exercises = Exercise.query.filter(
+        Exercise.user_id == current_user.id,
+        Exercise.date >= exercise_start_date
+    ).order_by(Exercise.date.desc()).all()
+
+    # Get meals for the last 7 days
+    meals = MealPlan.query.filter(
+        MealPlan.user_id == current_user.id,
+        MealPlan.date >= exercise_start_date
+    ).order_by(MealPlan.date.desc(), MealPlan.meal_type).all()
+
+    # Get the latest photos (one of each type)
+    latest_photos = []
+    for photo_type in ['front', 'side', 'back']:
+        photo = PhotoProgress.query.filter_by(
+            user_id=current_user.id,
+            photo_type=photo_type
+        ).order_by(PhotoProgress.date.desc()).first()
+        if photo:
+            latest_photos.append(photo)
+
+    return render_template('progress_report.html',
+                         dates=dates,
+                         weights=weights,
+                         exercises=exercises,
+                         meals=meals,
+                         latest_photos=latest_photos,
+                         current_date=datetime.utcnow().strftime('%Y-%m-%d'))
+
 @app.route('/exercise')
 @login_required
 def exercise():
