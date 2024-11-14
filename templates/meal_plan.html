@@ -54,9 +54,18 @@
     <div class="col-md-6">
         <div class="card mb-4">
             <div class="card-body">
-                <h3 class="card-title">Suggestions de Repas IA</h3>
-                <button id="getMealSuggestions" class="btn btn-secondary mb-3">Obtenir des Suggestions</button>
-                <div id="suggestionResponse" class="bg-dark p-3 rounded" style="display: none;"></div>
+                <h3 class="card-title">Plan de Repas IA</h3>
+                <p class="text-muted">Obtenez un plan de repas personnalisé basé sur vos objectifs</p>
+                <button id="getMealSuggestions" class="btn btn-primary mb-3">
+                    <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                    Obtenir des Suggestions
+                </button>
+                <div id="suggestionResponse" class="d-none">
+                    <div class="meal-suggestions bg-dark p-3 rounded mb-3">
+                        <div id="mealContent"></div>
+                    </div>
+                    <button id="saveMealPlan" class="btn btn-success">Sauvegarder ce Plan</button>
+                </div>
             </div>
         </div>
     </div>
@@ -118,7 +127,15 @@
 {% block scripts %}
 <script>
 document.getElementById('getMealSuggestions').addEventListener('click', async function() {
+    const button = this;
+    const spinner = button.querySelector('.spinner-border');
+    const suggestionResponse = document.getElementById('suggestionResponse');
+    const mealContent = document.getElementById('mealContent');
+    
     try {
+        button.disabled = true;
+        spinner.classList.remove('d-none');
+        
         const response = await fetch('/get_meal_suggestions', {
             method: 'POST',
             headers: {
@@ -128,11 +145,14 @@ document.getElementById('getMealSuggestions').addEventListener('click', async fu
         });
         
         const data = await response.json();
-        const suggestionDiv = document.getElementById('suggestionResponse');
-        suggestionDiv.style.display = 'block';
-        suggestionDiv.innerHTML = data.response.replace(/\n/g, '<br>');
+        mealContent.innerHTML = data.response.replace(/\n/g, '<br>');
+        suggestionResponse.classList.remove('d-none');
     } catch (error) {
         console.error('Error:', error);
+        mealContent.innerHTML = 'Une erreur s\'est produite. Veuillez réessayer.';
+    } finally {
+        button.disabled = false;
+        spinner.classList.add('d-none');
     }
 });
 
@@ -151,5 +171,69 @@ document.getElementById('mealForm').addEventListener('submit', async function(e)
         console.error('Error:', error);
     }
 });
+
+// Save meal plan functionality
+document.getElementById('saveMealPlan').addEventListener('click', async function() {
+    const mealContent = document.getElementById('mealContent').textContent;
+    const meals = parseMealPlan(mealContent);
+    
+    for (const meal of meals) {
+        try {
+            const formData = new FormData();
+            formData.append('csrf_token', '{{ csrf_token() }}');
+            formData.append('meal_type', meal.type);
+            formData.append('name', meal.name);
+            formData.append('description', meal.description);
+            formData.append('calories', meal.calories);
+            if (meal.protein) formData.append('protein', meal.protein);
+            if (meal.carbs) formData.append('carbs', meal.carbs);
+            if (meal.fats) formData.append('fats', meal.fats);
+            
+            await fetch('/add_meal', {
+                method: 'POST',
+                body: formData
+            });
+        } catch (error) {
+            console.error('Error saving meal:', error);
+        }
+    }
+    
+    window.location.reload();
+});
+
+function parseMealPlan(content) {
+    const meals = [];
+    const sections = content.split(/\n(?=[A-Za-zÀ-ÿ]+ \(\d+ calories\):)/);
+    
+    for (const section of sections) {
+        if (!section.trim()) continue;
+        
+        const caloriesMatch = section.match(/\((\d+) calories\)/);
+        const titleMatch = section.match(/^(.*?)\s*\(\d+ calories\):/);
+        
+        if (caloriesMatch && titleMatch) {
+            const calories = parseInt(caloriesMatch[1]);
+            const title = titleMatch[1].trim().toLowerCase();
+            
+            let type;
+            if (title.includes('petit-déjeuner')) type = 'breakfast';
+            else if (title.includes('déjeuner')) type = 'lunch';
+            else if (title.includes('dîner')) type = 'dinner';
+            else if (title.includes('collation')) type = 'snack';
+            else continue;
+            
+            const description = section.split(':')[1].trim();
+            
+            meals.push({
+                type: type,
+                name: `${title} AI suggéré`,
+                description: description,
+                calories: calories
+            });
+        }
+    }
+    
+    return meals;
+}
 </script>
 {% endblock %}
