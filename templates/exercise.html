@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h3 class="card-title">Ajouter un Exercice</h3>
+                <form method="POST" action="{{ url_for('add_exercise') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label for="type" class="form-label">Type d'Exercice</label>
+                        <select class="form-select" id="type" name="type" required>
+                            <option value="cardio">Cardio</option>
+                            <option value="strength">Musculation</option>
+                            <option value="flexibility">Flexibilité</option>
+                            <option value="sports">Sports</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Nom de l'Exercice</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="duration" class="form-label">Durée (minutes)</label>
+                            <input type="number" class="form-control" id="duration" name="duration" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="calories_burned" class="form-label">Calories Brûlées</label>
+                            <input type="number" class="form-control" id="calories_burned" name="calories_burned">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="intensity" class="form-label">Intensité</label>
+                        <select class="form-select" id="intensity" name="intensity" required>
+                            <option value="low">Faible</option>
+                            <option value="medium">Moyenne</option>
+                            <option value="high">Élevée</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Enregistrer l'Exercice</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h3 class="card-title">Résumé des Exercices</h3>
+                <canvas id="exerciseChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title">Historique des Exercices</h3>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Exercice</th>
+                                <th>Durée (min)</th>
+                                <th>Calories</th>
+                                <th>Intensité</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for exercise in exercises %}
+                            <tr>
+                                <td>{{ exercise.date.strftime('%Y-%m-%d') }}</td>
+                                <td>
+                                    {% if exercise.type == 'cardio' %}Cardio
+                                    {% elif exercise.type == 'strength' %}Musculation
+                                    {% elif exercise.type == 'flexibility' %}Flexibilité
+                                    {% else %}Sports{% endif %}
+                                </td>
+                                <td>{{ exercise.name }}</td>
+                                <td>{{ exercise.duration }}</td>
+                                <td>{{ exercise.calories_burned or '-' }}</td>
+                                <td>
+                                    {% if exercise.intensity == 'low' %}Faible
+                                    {% elif exercise.intensity == 'medium' %}Moyenne
+                                    {% else %}Élevée{% endif %}
+                                </td>
+                                <td>{{ exercise.notes or '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function initializeExerciseChart(exercises) {
+    const ctx = document.getElementById('exerciseChart').getContext('2d');
+    
+    // Group exercises by type and sum durations
+    const exerciseData = {};
+    exercises.forEach(exercise => {
+        if (!exerciseData[exercise.type]) {
+            exerciseData[exercise.type] = 0;
+        }
+        exerciseData[exercise.type] += exercise.duration;
+    });
+
+    const types = Object.keys(exerciseData);
+    const durations = Object.values(exerciseData);
+
+    new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: types.map(type => {
+                switch(type) {
+                    case 'cardio': return 'Cardio';
+                    case 'strength': return 'Musculation';
+                    case 'flexibility': return 'Flexibilité';
+                    default: return 'Sports';
+                }
+            }),
+            datasets: [{
+                data: durations,
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.8)',
+                    'rgba(54, 162, 235, 0.8)',
+                    'rgba(255, 206, 86, 0.8)',
+                    'rgba(75, 192, 192, 0.8)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            return `${label}: ${value} minutes`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Initialize chart when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    const exercises = {{ exercises|tojson|safe }};
+    initializeExerciseChart(exercises);
+});
+</script>
+{% endblock %}

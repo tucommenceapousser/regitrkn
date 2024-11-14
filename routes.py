@@ -2,7 +2,7 @@ from flask import render_template, redirect, url_for, request, flash, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import app, db
-from models import User, Measurement, ChatHistory, MealPlan
+from models import User, Measurement, ChatHistory, MealPlan, Exercise
 from chat_request import get_coaching_response
 import json
 from datetime import datetime, timedelta
@@ -91,6 +91,38 @@ def dashboard():
         date=datetime.utcnow().date()
     ).order_by(MealPlan.meal_type).all()
     return render_template('dashboard.html', measurements=measurements, meals=today_meals)
+
+@app.route('/exercise')
+@login_required
+def exercise():
+    # Get exercises for the last 7 days
+    start_date = datetime.utcnow() - timedelta(days=7)
+    exercises = Exercise.query.filter(
+        Exercise.user_id == current_user.id,
+        Exercise.date >= start_date
+    ).order_by(Exercise.date.desc()).all()
+    return render_template('exercise.html', exercises=exercises)
+
+@app.route('/add_exercise', methods=['POST'])
+@login_required
+def add_exercise():
+    try:
+        exercise = Exercise(
+            user_id=current_user.id,
+            type=request.form['type'],
+            name=request.form['name'],
+            duration=int(request.form['duration']),
+            calories_burned=int(request.form['calories_burned']) if request.form['calories_burned'] else None,
+            intensity=request.form['intensity'],
+            notes=request.form['notes']
+        )
+        db.session.add(exercise)
+        db.session.commit()
+        flash('Exercice ajouté avec succès!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Erreur lors de l\'ajout de l\'exercice. Veuillez réessayer.', 'error')
+    return redirect(url_for('exercise'))
 
 @app.route('/add_measurement', methods=['POST'])
 @login_required
@@ -213,3 +245,12 @@ def logout():
 def handle_csrf_error(e):
     flash('Échec de la validation du jeton CSRF. Veuillez réessayer.', 'error')
     return redirect(url_for('login'))
+
+@app.errorhandler(404)
+def not_found_error(error):
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    db.session.rollback()
+    return render_template('500.html'), 500

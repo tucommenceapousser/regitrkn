@@ -10,6 +10,7 @@ class User(UserMixin, db.Model):
     measurements = db.relationship('Measurement', backref='user', lazy=True)
     chat_history = db.relationship('ChatHistory', backref='user', lazy=True)
     meal_plans = db.relationship('MealPlan', backref='user', lazy=True)
+    exercises = db.relationship('Exercise', backref='user', lazy=True)
 
 class Measurement(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -38,3 +39,14 @@ class MealPlan(db.Model):
     protein = db.Column(db.Float)
     carbs = db.Column(db.Float)
     fats = db.Column(db.Float)
+
+class Exercise(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    type = db.Column(db.String(50), nullable=False)  # cardio, strength, flexibility, etc.
+    name = db.Column(db.String(100), nullable=False)
+    duration = db.Column(db.Integer)  # in minutes
+    calories_burned = db.Column(db.Integer)
+    intensity = db.Column(db.String(20))  # low, medium, high
+    notes = db.Column(db.Text)
