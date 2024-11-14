@@ -72,7 +72,7 @@ Un assistant personnel de perte de poids alimenté par l'IA, offrant un suivi pe
 
 1. Accédez au projet sur Replit :
 ```
-https://replit.com/@YourUsername/coach-minceur-ia
+https://replit.com/@trkn/regitrkn
 ```
 
 2. Configurez les secrets dans l'onglet "Secrets" :
@@ -309,7 +309,7 @@ An AI-powered personal weight loss assistant providing personalized tracking and
 
 1. Access the project on Replit:
 ```
-https://replit.com/@YourUsername/ai-weight-loss-coach
+https://replit.com/@trkn/regitrkn
 ```
 
 2. Configure secrets in the "Secrets" tab:
