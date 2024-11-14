@@ -44,4 +44,4 @@ def get_coaching_response(user_message: str, user_context: dict) -> str:
         )
         return response.choices[0].message.content
     except Exception as e:
-        return "Une erreur s'est produite. Veuillez réessayer plus tard." if is_french else f"An error occurred. Please try again later."
+        return "Une erreur s'est produite. Veuillez réessayer plus tard." if is_french else "An error occurred. Please try again later."

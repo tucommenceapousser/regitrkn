@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!message) return;
 
         // Add user message to chat
-        appendMessage('You', message, 'user-message');
+        appendMessage('Vous', message, 'user-message');
         messageInput.value = '';
 
         try {
@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
             appendMessage('Coach', data.response, 'coach-message');
         } catch (error) {
-            appendMessage('System', 'Sorry, there was an error processing your request.', 'system-message');
+            appendMessage('Système', 'Désolé, une erreur s\'est produite lors du traitement de votre demande.', 'system-message');
         }
 
         chatHistory.scrollTop = chatHistory.scrollHeight;

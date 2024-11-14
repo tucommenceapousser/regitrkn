@@ -179,7 +179,8 @@ def get_advice():
         
         user_context = {
             'weight': latest_measurement.weight if latest_measurement else 'unknown',
-            'progress': 'maintaining' if not latest_measurement else 'unknown'
+            'progress': 'maintaining' if not latest_measurement else 'unknown',
+            'language': 'fr'  # Added French language context
         }
         
         response = get_coaching_response(message, user_context)
@@ -194,10 +195,10 @@ def get_advice():
         
         return jsonify({'response': response})
     except CSRFError:
-        return jsonify({'response': 'CSRF token validation failed. Please refresh the page and try again.'}), 400
+        return jsonify({'response': 'Échec de la validation du jeton CSRF. Veuillez actualiser la page et réessayer.'}), 400
     except Exception as e:
         db.session.rollback()
-        return jsonify({'response': 'An error occurred. Please try again.'}), 500
+        return jsonify({'response': 'Une erreur s\'est produite. Veuillez réessayer.'}), 500
 
 @app.route('/logout')
 @login_required
