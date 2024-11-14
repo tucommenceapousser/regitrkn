@@ -4,3 +4,4 @@ Flask-WTF==1.1.1
 Werkzeug==2.2.2
 SQLAlchemy==1.4.44
 openai==0.10.2
+flask_sqlalchemy
