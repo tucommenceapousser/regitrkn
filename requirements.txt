@@ -1,0 +1,6 @@
+Flask==2.2.2
+Flask-Login==0.6.2
+Flask-WTF==1.1.1
+Werkzeug==2.2.2
+SQLAlchemy==1.4.44
+openai==0.10.2
