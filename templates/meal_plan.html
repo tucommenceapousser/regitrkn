@@ -5,20 +5,20 @@
     <div class="col-md-6">
         <div class="card mb-4">
             <div class="card-body">
-                <h3 class="card-title">Add New Meal</h3>
-                <form method="POST" action="{{ url_for('add_meal') }}">
+                <h3 class="card-title">Ajouter un Nouveau Repas</h3>
+                <form method="POST" action="{{ url_for('add_meal') }}" id="mealForm">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="mb-3">
-                        <label for="meal_type" class="form-label">Meal Type</label>
+                        <label for="meal_type" class="form-label">Type de Repas</label>
                         <select class="form-select" id="meal_type" name="meal_type" required>
-                            <option value="breakfast">Breakfast</option>
-                            <option value="lunch">Lunch</option>
-                            <option value="dinner">Dinner</option>
-                            <option value="snack">Snack</option>
+                            <option value="breakfast">Petit-déjeuner</option>
+                            <option value="lunch">Déjeuner</option>
+                            <option value="dinner">Dîner</option>
+                            <option value="snack">Collation</option>
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label for="name" class="form-label">Meal Name</label>
+                        <label for="name" class="form-label">Nom du Repas</label>
                         <input type="text" class="form-control" id="name" name="name" required>
                     </div>
                     <div class="mb-3">
@@ -31,21 +31,21 @@
                             <input type="number" class="form-control" id="calories" name="calories">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="protein" class="form-label">Protein (g)</label>
+                            <label for="protein" class="form-label">Protéines (g)</label>
                             <input type="number" step="0.1" class="form-control" id="protein" name="protein">
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="carbs" class="form-label">Carbs (g)</label>
+                            <label for="carbs" class="form-label">Glucides (g)</label>
                             <input type="number" step="0.1" class="form-control" id="carbs" name="carbs">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="fats" class="form-label">Fats (g)</label>
+                            <label for="fats" class="form-label">Lipides (g)</label>
                             <input type="number" step="0.1" class="form-control" id="fats" name="fats">
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary">Add Meal</button>
+                    <button type="submit" class="btn btn-primary">Ajouter le Repas</button>
                 </form>
             </div>
         </div>
@@ -54,8 +54,8 @@
     <div class="col-md-6">
         <div class="card mb-4">
             <div class="card-body">
-                <h3 class="card-title">AI Meal Suggestions</h3>
-                <button id="getMealSuggestions" class="btn btn-secondary mb-3">Get Suggestions</button>
+                <h3 class="card-title">Suggestions de Repas IA</h3>
+                <button id="getMealSuggestions" class="btn btn-secondary mb-3">Obtenir des Suggestions</button>
                 <div id="suggestionResponse" class="bg-dark p-3 rounded" style="display: none;"></div>
             </div>
         </div>
@@ -66,35 +66,49 @@
     <div class="col-12">
         <div class="card">
             <div class="card-body">
-                <h3 class="card-title">Today's Meals</h3>
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Type</th>
-                                <th>Name</th>
-                                <th>Description</th>
-                                <th>Calories</th>
-                                <th>Protein</th>
-                                <th>Carbs</th>
-                                <th>Fats</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for meal in meals %}
-                            <tr>
-                                <td>{{ meal.meal_type.capitalize() }}</td>
-                                <td>{{ meal.name }}</td>
-                                <td>{{ meal.description }}</td>
-                                <td>{{ meal.calories if meal.calories else '-' }}</td>
-                                <td>{{ "%.1f"|format(meal.protein) if meal.protein else '-' }}</td>
-                                <td>{{ "%.1f"|format(meal.carbs) if meal.carbs else '-' }}</td>
-                                <td>{{ "%.1f"|format(meal.fats) if meal.fats else '-' }}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                <h3 class="card-title">Mes Repas</h3>
+                {% set dates = meals|groupby('date.date()') %}
+                {% for date, date_meals in dates %}
+                    <h4 class="mt-4">{{ date.strftime('%d/%m/%Y') }}</h4>
+                    {% set meal_types = ['breakfast', 'lunch', 'dinner', 'snack'] %}
+                    {% for meal_type in meal_types %}
+                        {% set type_meals = date_meals|selectattr('meal_type', 'equalto', meal_type)|list %}
+                        {% if type_meals %}
+                            <h5 class="mt-3">
+                                {% if meal_type == 'breakfast' %}Petit-déjeuner
+                                {% elif meal_type == 'lunch' %}Déjeuner
+                                {% elif meal_type == 'dinner' %}Dîner
+                                {% else %}Collation{% endif %}
+                            </h5>
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Nom</th>
+                                            <th>Description</th>
+                                            <th>Calories</th>
+                                            <th>Protéines</th>
+                                            <th>Glucides</th>
+                                            <th>Lipides</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for meal in type_meals %}
+                                        <tr>
+                                            <td>{{ meal.name }}</td>
+                                            <td>{{ meal.description }}</td>
+                                            <td>{{ meal.calories if meal.calories else '-' }}</td>
+                                            <td>{{ "%.1f"|format(meal.protein) if meal.protein else '-' }}</td>
+                                            <td>{{ "%.1f"|format(meal.carbs) if meal.carbs else '-' }}</td>
+                                            <td>{{ "%.1f"|format(meal.fats) if meal.fats else '-' }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                {% endfor %}
             </div>
         </div>
     </div>
@@ -117,6 +131,23 @@ document.getElementById('getMealSuggestions').addEventListener('click', async fu
         const suggestionDiv = document.getElementById('suggestionResponse');
         suggestionDiv.style.display = 'block';
         suggestionDiv.innerHTML = data.response.replace(/\n/g, '<br>');
+    } catch (error) {
+        console.error('Error:', error);
+    }
+});
+
+// Add form submission handler for immediate update
+document.getElementById('mealForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    try {
+        const formData = new FormData(this);
+        const response = await fetch('/add_meal', {
+            method: 'POST',
+            body: formData
+        });
+        if (response.ok) {
+            window.location.reload();
+        }
     } catch (error) {
         console.error('Error:', error);
     }

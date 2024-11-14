@@ -29,18 +29,18 @@ def login():
             password = request.form.get('password')
             
             if not username or not password:
-                flash('Please provide both username and password', 'error')
+                flash('Veuillez fournir un nom d\'utilisateur et un mot de passe', 'error')
                 return render_template('login.html')
             
             user = User.query.filter_by(username=username).first()
             if user and check_password_hash(user.password_hash, password):
                 login_user(user)
                 return redirect(url_for('dashboard'))
-            flash('Invalid username or password', 'error')
+            flash('Nom d\'utilisateur ou mot de passe invalide', 'error')
         except CSRFError:
-            flash('CSRF token validation failed. Please try again.', 'error')
+            flash('Échec de la validation du jeton CSRF. Veuillez réessayer.', 'error')
         except Exception as e:
-            flash('An error occurred. Please try again.', 'error')
+            flash('Une erreur s\'est produite. Veuillez réessayer.', 'error')
     return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -52,19 +52,19 @@ def register():
             password = request.form.get('password')
             
             if not all([username, email, password]):
-                flash('Please fill in all fields', 'error')
+                flash('Veuillez remplir tous les champs', 'error')
                 return render_template('register.html')
             
             if User.query.filter_by(username=username).first():
-                flash('Username already exists', 'error')
+                flash('Ce nom d\'utilisateur existe déjà', 'error')
                 return render_template('register.html')
             
             if User.query.filter_by(email=email).first():
-                flash('Email already registered', 'error')
+                flash('Cet email est déjà enregistré', 'error')
                 return render_template('register.html')
             
             if len(password) < 6:
-                flash('Password must be at least 6 characters long', 'error')
+                flash('Le mot de passe doit contenir au moins 6 caractères', 'error')
                 return render_template('register.html')
             
             user = User(
@@ -75,13 +75,11 @@ def register():
             db.session.add(user)
             db.session.commit()
             login_user(user)
-            flash('Registration successful!', 'success')
+            flash('Inscription réussie!', 'success')
             return redirect(url_for('dashboard'))
-        except CSRFError:
-            flash('CSRF token validation failed. Please try again.', 'error')
         except Exception as e:
             db.session.rollback()
-            flash('An error occurred during registration. Please try again.', 'error')
+            flash('Une erreur s\'est produite lors de l\'inscription. Veuillez réessayer.', 'error')
     return render_template('register.html')
 
 @app.route('/dashboard')
@@ -116,10 +114,12 @@ def add_measurement():
 @app.route('/meal_plan', methods=['GET'])
 @login_required
 def meal_plan():
-    meals = MealPlan.query.filter_by(
-        user_id=current_user.id,
-        date=datetime.utcnow().date()
-    ).order_by(MealPlan.meal_type).all()
+    # Get meals for the last 7 days
+    start_date = datetime.utcnow() - timedelta(days=7)
+    meals = MealPlan.query.filter(
+        MealPlan.user_id == current_user.id,
+        MealPlan.date >= start_date
+    ).order_by(MealPlan.date.desc(), MealPlan.meal_type).all()
     return render_template('meal_plan.html', meals=meals)
 
 @app.route('/add_meal', methods=['POST'])
@@ -138,29 +138,31 @@ def add_meal():
         )
         db.session.add(meal)
         db.session.commit()
-        flash('Meal added successfully!', 'success')
+        flash('Repas ajouté avec succès!', 'success')
+        return jsonify({'status': 'success', 'message': 'Repas ajouté avec succès!'})
     except Exception as e:
         db.session.rollback()
-        flash('Error adding meal. Please try again.', 'error')
-    return redirect(url_for('meal_plan'))
+        flash('Erreur lors de l\'ajout du repas. Veuillez réessayer.', 'error')
+        return jsonify({'status': 'error', 'message': 'Erreur lors de l\'ajout du repas.'}), 400
 
 @app.route('/get_meal_suggestions', methods=['POST'])
 @login_required
 def get_meal_suggestions():
     try:
-        message = "Please suggest a healthy meal plan based on my weight loss goals."
+        message = "Veuillez suggérer un plan de repas sain basé sur mes objectifs de perte de poids."
         latest_measurement = Measurement.query.filter_by(user_id=current_user.id).order_by(Measurement.date.desc()).first()
         
         user_context = {
             'weight': latest_measurement.weight if latest_measurement else 'unknown',
             'progress': 'maintaining' if not latest_measurement else 'unknown',
-            'request_type': 'meal_plan'
+            'request_type': 'meal_plan',
+            'language': 'fr'
         }
         
         response = get_coaching_response(message, user_context)
         return jsonify({'response': response})
     except Exception as e:
-        return jsonify({'response': 'An error occurred. Please try again.'}), 500
+        return jsonify({'response': 'Une erreur s\'est produite. Veuillez réessayer.'}), 500
 
 @app.route('/chat')
 @login_required
@@ -201,10 +203,10 @@ def get_advice():
 @login_required
 def logout():
     logout_user()
-    flash('You have been logged out successfully.', 'info')
+    flash('Vous avez été déconnecté avec succès.', 'info')
     return redirect(url_for('login'))
 
 @app.errorhandler(CSRFError)
 def handle_csrf_error(e):
-    flash('CSRF token validation failed. Please try again.', 'error')
+    flash('Échec de la validation du jeton CSRF. Veuillez réessayer.', 'error')
     return redirect(url_for('login'))
