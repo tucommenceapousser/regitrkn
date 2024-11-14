@@ -153,6 +153,7 @@ def get_meal_suggestions():
         latest_measurement = Measurement.query.filter_by(user_id=current_user.id).order_by(Measurement.date.desc()).first()
         
         user_context = {
+            'name': 'Anita',
             'weight': latest_measurement.weight if latest_measurement else 'unknown',
             'progress': 'maintaining' if not latest_measurement else 'unknown',
             'request_type': 'meal_plan',
@@ -178,9 +179,10 @@ def get_advice():
         latest_measurement = Measurement.query.filter_by(user_id=current_user.id).order_by(Measurement.date.desc()).first()
         
         user_context = {
+            'name': 'Anita',
             'weight': latest_measurement.weight if latest_measurement else 'unknown',
             'progress': 'maintaining' if not latest_measurement else 'unknown',
-            'language': 'fr'  # Added French language context
+            'language': 'fr'
         }
         
         response = get_coaching_response(message, user_context)

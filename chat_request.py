@@ -18,15 +18,18 @@ def get_openai_client():
 def get_coaching_response(user_message: str, user_context: dict) -> str:
     is_meal_plan = user_context.get('request_type') == 'meal_plan'
     is_french = user_context.get('language') == 'fr'
-    
-    system_prompt = """You are a supportive and knowledgeable weight loss coach. 
-    Provide encouraging, science-based advice for healthy and sustainable weight loss. 
-    Keep responses concise and actionable. Include specific recommendations when appropriate."""
+    user_name = user_context.get('name', 'Anita')
     
     if is_french:
-        system_prompt = """Vous êtes un coach de perte de poids encourageant et compétent.
+        system_prompt = f"""Vous êtes un coach de perte de poids encourageant et compétent pour {user_name}.
         Fournissez des conseils encourageants et scientifiques pour une perte de poids saine et durable.
-        Gardez les réponses concises et pratiques. Incluez des recommandations spécifiques lorsque c'est approprié."""
+        Gardez les réponses concises et pratiques. Incluez des recommandations spécifiques lorsque c'est approprié.
+        Adressez-vous à {user_name} directement dans vos réponses."""
+    else:
+        system_prompt = f"""You are a supportive and knowledgeable weight loss coach for {user_name}. 
+        Provide encouraging, science-based advice for healthy and sustainable weight loss. 
+        Keep responses concise and actionable. Include specific recommendations when appropriate.
+        Address {user_name} directly in your responses."""
     
     if is_meal_plan:
         if is_french:
