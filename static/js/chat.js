@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
                 },
                 body: `message=${encodeURIComponent(message)}`
             });
@@ -25,7 +26,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
             appendMessage('Coach', data.response, 'coach-message');
         } catch (error) {
-            appendMessage('Système', 'Désolé, une erreur s\'est produite lors du traitement de votre demande.', 'system-message');
+            console.error('Chat error:', error);
+            appendMessage('Système', 'Une erreur de communication s\'est produite. Veuillez réessayer.', 'system-message');
         }
 
         chatHistory.scrollTop = chatHistory.scrollHeight;

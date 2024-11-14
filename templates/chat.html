@@ -21,6 +21,7 @@
                 </div>
 
                 <form id="chat-form" class="mt-3">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="input-group">
                         <input type="text" id="message-input" class="form-control" placeholder="Tapez votre message..." required>
                         <button type="submit" class="btn btn-primary">Envoyer</button>
