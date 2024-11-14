@@ -8,7 +8,7 @@ function initializeCharts(measurements) {
         data: {
             labels: dates.reverse(),
             datasets: [{
-                label: 'Weight (kg)',
+                label: 'Poids (kg)',
                 data: weights.reverse(),
                 borderColor: 'rgb(75, 192, 192)',
                 tension: 0.1,
@@ -31,7 +31,7 @@ function initializeCharts(measurements) {
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            return `Weight: ${context.parsed.y} kg`;
+                            return `Poids: ${context.parsed.y} kg`;
                         }
                     }
                 }

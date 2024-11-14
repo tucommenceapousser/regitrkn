@@ -67,7 +67,7 @@
         <div class="card">
             <div class="card-body">
                 <h3 class="card-title">Mes Repas</h3>
-                {% set dates = meals|groupby('date.date()') %}
+                {% set dates = meals|groupby(attribute='date') %}
                 {% for date, date_meals in dates %}
                     <h4 class="mt-4">{{ date.strftime('%d/%m/%Y') }}</h4>
                     {% set meal_types = ['breakfast', 'lunch', 'dinner', 'snack'] %}
@@ -136,7 +136,6 @@ document.getElementById('getMealSuggestions').addEventListener('click', async fu
     }
 });
 
-// Add form submission handler for immediate update
 document.getElementById('mealForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     try {

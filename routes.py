@@ -105,10 +105,10 @@ def add_measurement():
         )
         db.session.add(measurement)
         db.session.commit()
-        flash('Measurement added successfully!', 'success')
+        flash('Mesure ajoutée avec succès!', 'success')
     except Exception as e:
         db.session.rollback()
-        flash('Error adding measurement. Please try again.', 'error')
+        flash('Erreur lors de l\'ajout de la mesure. Veuillez réessayer.', 'error')
     return redirect(url_for('dashboard'))
 
 @app.route('/meal_plan', methods=['GET'])
