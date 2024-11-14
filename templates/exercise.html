@@ -167,7 +167,7 @@ function initializeExerciseChart(exercises) {
 
 // Initialize chart when page loads
 document.addEventListener('DOMContentLoaded', function() {
-    const exercises = {{ exercises|tojson|safe }};
+    const exercises = {{ exercise_data|tojson|safe }};
     initializeExerciseChart(exercises);
 });
 </script>

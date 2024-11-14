@@ -101,7 +101,19 @@ def exercise():
         Exercise.user_id == current_user.id,
         Exercise.date >= start_date
     ).order_by(Exercise.date.desc()).all()
-    return render_template('exercise.html', exercises=exercises)
+    
+    # Serialize exercise data for the chart
+    exercise_data = [{
+        'type': exercise.type,
+        'name': exercise.name,
+        'duration': exercise.duration,
+        'calories_burned': exercise.calories_burned,
+        'intensity': exercise.intensity,
+        'date': exercise.date.strftime('%Y-%m-%d'),
+        'notes': exercise.notes
+    } for exercise in exercises]
+    
+    return render_template('exercise.html', exercises=exercises, exercise_data=exercise_data)
 
 @app.route('/add_exercise', methods=['POST'])
 @login_required
