@@ -2,7 +2,7 @@ from flask import render_template, redirect, url_for, request, flash, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import app, db
-from models import User, Measurement, ChatHistory
+from models import User, Measurement, ChatHistory, MealPlan
 from chat_request import get_coaching_response
 import json
 from datetime import datetime, timedelta
@@ -88,7 +88,11 @@ def register():
 @login_required
 def dashboard():
     measurements = Measurement.query.filter_by(user_id=current_user.id).order_by(Measurement.date.desc()).limit(30).all()
-    return render_template('dashboard.html', measurements=measurements)
+    today_meals = MealPlan.query.filter_by(
+        user_id=current_user.id,
+        date=datetime.utcnow().date()
+    ).order_by(MealPlan.meal_type).all()
+    return render_template('dashboard.html', measurements=measurements, meals=today_meals)
 
 @app.route('/add_measurement', methods=['POST'])
 @login_required
@@ -108,6 +112,55 @@ def add_measurement():
         db.session.rollback()
         flash('Error adding measurement. Please try again.', 'error')
     return redirect(url_for('dashboard'))
+
+@app.route('/meal_plan', methods=['GET'])
+@login_required
+def meal_plan():
+    meals = MealPlan.query.filter_by(
+        user_id=current_user.id,
+        date=datetime.utcnow().date()
+    ).order_by(MealPlan.meal_type).all()
+    return render_template('meal_plan.html', meals=meals)
+
+@app.route('/add_meal', methods=['POST'])
+@login_required
+def add_meal():
+    try:
+        meal = MealPlan(
+            user_id=current_user.id,
+            meal_type=request.form['meal_type'],
+            name=request.form['name'],
+            description=request.form['description'],
+            calories=int(request.form['calories']) if request.form['calories'] else None,
+            protein=float(request.form['protein']) if request.form['protein'] else None,
+            carbs=float(request.form['carbs']) if request.form['carbs'] else None,
+            fats=float(request.form['fats']) if request.form['fats'] else None
+        )
+        db.session.add(meal)
+        db.session.commit()
+        flash('Meal added successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error adding meal. Please try again.', 'error')
+    return redirect(url_for('meal_plan'))
+
+@app.route('/get_meal_suggestions', methods=['POST'])
+@login_required
+def get_meal_suggestions():
+    try:
+        message = "Please suggest a healthy meal plan based on my weight loss goals."
+        latest_measurement = Measurement.query.filter_by(user_id=current_user.id).order_by(Measurement.date.desc()).first()
+        
+        user_context = {
+            'weight': latest_measurement.weight if latest_measurement else 'unknown',
+            'progress': 'maintaining' if not latest_measurement else 'unknown',
+            'request_type': 'meal_plan'
+        }
+        
+        response = get_coaching_response(message, user_context)
+        return jsonify({'response': response})
+    except Exception as e:
+        return jsonify({'response': 'An error occurred. Please try again.'}), 500
 
 @app.route('/chat')
 @login_required
