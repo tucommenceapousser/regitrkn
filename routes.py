@@ -2,11 +2,13 @@ from flask import render_template, redirect, url_for, request, flash, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import app, db
-from models import User, Measurement, ChatHistory, MealPlan, Exercise
+from models import User, Measurement, ChatHistory, MealPlan, Exercise, PhotoProgress
 from chat_request import get_coaching_response
 import json
 from datetime import datetime, timedelta
 from flask_wtf.csrf import CSRFError
+import base64
+import re
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -266,3 +268,40 @@ def not_found_error(error):
 def internal_error(error):
     db.session.rollback()
     return render_template('500.html'), 500
+
+@app.route('/photos')
+@login_required
+def photos():
+    photos = PhotoProgress.query.filter_by(user_id=current_user.id).order_by(PhotoProgress.date.desc()).all()
+    latest_photo = photos[0] if photos else None
+    return render_template('photos.html', photos=photos, latest_photo=latest_photo)
+
+@app.route('/add_photo', methods=['POST'])
+@login_required
+def add_photo():
+    try:
+        # Get the base64 image data from the form
+        photo_data = request.form.get('processed_photo')
+        if not photo_data:
+            flash('Aucune photo n\'a été fournie', 'error')
+            return redirect(url_for('photos'))
+
+        # Extract the actual base64 data after the data URL prefix
+        base64_data = re.sub('^data:image/.+;base64,', '', photo_data)
+
+        # Create new photo progress entry
+        photo = PhotoProgress(
+            user_id=current_user.id,
+            photo_data=base64_data,
+            photo_type=request.form['photo_type'],
+            notes=request.form.get('notes', '')
+        )
+        db.session.add(photo)
+        db.session.commit()
+        
+        flash('Photo ajoutée avec succès!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Erreur lors de l\'ajout de la photo. Veuillez réessayer.', 'error')
+    
+    return redirect(url_for('photos'))

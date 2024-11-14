@@ -11,6 +11,7 @@ class User(UserMixin, db.Model):
     chat_history = db.relationship('ChatHistory', backref='user', lazy=True)
     meal_plans = db.relationship('MealPlan', backref='user', lazy=True)
     exercises = db.relationship('Exercise', backref='user', lazy=True)
+    photos = db.relationship('PhotoProgress', backref='user', lazy=True)
 
 class Measurement(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -49,4 +50,12 @@ class Exercise(db.Model):
     duration = db.Column(db.Integer)  # in minutes
     calories_burned = db.Column(db.Integer)
     intensity = db.Column(db.String(20))  # low, medium, high
+    notes = db.Column(db.Text)
+
+class PhotoProgress(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    photo_data = db.Column(db.Text, nullable=False)  # Base64 encoded image
+    photo_type = db.Column(db.String(20), nullable=False)  # front, side, back
     notes = db.Column(db.Text)

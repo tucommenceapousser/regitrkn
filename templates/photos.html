@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h3 class="card-title">Ajouter une Photo</h3>
+                <form id="photoForm" method="POST" action="{{ url_for('add_photo') }}" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label for="photo_type" class="form-label">Type de Photo</label>
+                        <select class="form-select" id="photo_type" name="photo_type" required>
+                            <option value="front">Face</option>
+                            <option value="side">Profil</option>
+                            <option value="back">Dos</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="photo" class="form-label">Photo</label>
+                        <input type="file" class="form-control" id="photo" name="photo" accept="image/*" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <canvas id="imageEditor" style="display: none;"></canvas>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Enregistrer la Photo</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h3 class="card-title">Dernière Photo</h3>
+                <div id="latestPhoto" class="text-center">
+                    {% if latest_photo %}
+                    <img src="data:image/jpeg;base64,{{ latest_photo.photo_data }}" class="img-fluid mb-2" alt="Latest progress photo">
+                    <p class="text-muted">{{ latest_photo.date.strftime('%Y-%m-%d') }}</p>
+                    {% else %}
+                    <p class="text-muted">Aucune photo disponible</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title">Historique des Photos</h3>
+                <div class="row">
+                    {% for photo in photos %}
+                    <div class="col-md-4 mb-4">
+                        <div class="card">
+                            <img src="data:image/jpeg;base64,{{ photo.photo_data }}" class="card-img-top" alt="Progress photo">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    {% if photo.photo_type == 'front' %}Face
+                                    {% elif photo.photo_type == 'side' %}Profil
+                                    {% else %}Dos{% endif %}
+                                </h5>
+                                <p class="card-text">
+                                    <small class="text-muted">{{ photo.date.strftime('%Y-%m-%d') }}</small>
+                                </p>
+                                {% if photo.notes %}
+                                <p class="card-text">{{ photo.notes }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const canvas = new fabric.Canvas('imageEditor');
+    const photoInput = document.getElementById('photo');
+    const photoForm = document.getElementById('photoForm');
+
+    photoInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                // Create an image object
+                const imgObj = new Image();
+                imgObj.src = event.target.result;
+                imgObj.onload = function() {
+                    // Calculate new dimensions (max 800x800)
+                    let width = imgObj.width;
+                    let height = imgObj.height;
+                    const maxSize = 800;
+
+                    if (width > height && width > maxSize) {
+                        height *= maxSize / width;
+                        width = maxSize;
+                    } else if (height > maxSize) {
+                        width *= maxSize / height;
+                        height = maxSize;
+                    }
+
+                    // Set canvas size
+                    canvas.setWidth(width);
+                    canvas.setHeight(height);
+
+                    // Create fabric image and add to canvas
+                    fabric.Image.fromURL(imgObj.src, function(img) {
+                        img.scaleToWidth(width);
+                        img.scaleToHeight(height);
+                        canvas.add(img);
+                        canvas.renderAll();
+                    });
+
+                    // Show canvas
+                    canvas.getElement().style.display = 'block';
+                };
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    photoForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Get the processed image data
+        const processedImage = canvas.toDataURL('image/jpeg', 0.8);
+        
+        // Create a hidden input for the processed image
+        const imageInput = document.createElement('input');
+        imageInput.type = 'hidden';
+        imageInput.name = 'processed_photo';
+        imageInput.value = processedImage;
+        
+        // Add the hidden input to the form
+        this.appendChild(imageInput);
+        
+        // Submit the form
+        this.submit();
+    });
+});
+</script>
+{% endblock %}
