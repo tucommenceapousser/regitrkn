@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h3 class="card-title">Add New Measurement</h3>
+                <form method="POST" action="{{ url_for('add_measurement') }}">
+                    <div class="mb-3">
+                        <label for="weight" class="form-label">Weight (kg)</label>
+                        <input type="number" step="0.1" class="form-control" id="weight" name="weight" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="waist" class="form-label">Waist (cm)</label>
+                        <input type="number" step="0.1" class="form-control" id="waist" name="waist">
+                    </div>
+                    <div class="mb-3">
+                        <label for="body_fat" class="form-label">Body Fat %</label>
+                        <input type="number" step="0.1" class="form-control" id="body_fat" name="body_fat">
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Measurement</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h3 class="card-title">Progress Chart</h3>
+                <canvas id="weightChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title">Recent Measurements</h3>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Weight (kg)</th>
+                                <th>Waist (cm)</th>
+                                <th>Body Fat %</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for measurement in measurements %}
+                            <tr>
+                                <td>{{ measurement.date.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ "%.1f"|format(measurement.weight) }}</td>
+                                <td>{{ "%.1f"|format(measurement.waist) if measurement.waist else '-' }}</td>
+                                <td>{{ "%.1f"|format(measurement.body_fat) if measurement.body_fat else '-' }}</td>
+                                <td>{{ measurement.notes or '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>
+    const measurements = {{ measurements|tojson|safe }};
+    initializeCharts(measurements);
+</script>
+{% endblock %}
